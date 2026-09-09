@@ -45,10 +45,38 @@ void main() {
     await tester.pumpWidget(wrapForTest(const DashboardScreen(), client));
     await tester.pumpAndSettle();
 
-    expect(find.text('nightly'), findsOneWidget);
+    // The job name appears twice: once in "Upcoming" (the job itself) and
+    // once in "Recent" (the run's job name, resolved from its job_id).
+    expect(find.text('nightly'), findsNWidgets(2));
     expect(
       find.text('No servers yet. Add a server to get started.'),
       findsNothing,
     );
+  });
+
+  testWidgets('shows the job name (not just the stage) for an active run', (
+    tester,
+  ) async {
+    final client = FakeIpcClient();
+    client.setConnectionState(IpcConnectionState.connected);
+    client.handlers['servers.list'] = (_) => {
+      'servers': [serverJson()],
+    };
+    client.handlers['jobs.list'] = (_) => {
+      'jobs': [jobJson()],
+    };
+    client.handlers['runs.list'] = (_) => {
+      'runs': [runJson(status: 'RUNNING', finishedAt: '')],
+    };
+    client.handlers['runs.get'] = (_) => {
+      'run': runJson(status: 'RUNNING', finishedAt: ''),
+      'steps': [stepJson(status: 'RUNNING')],
+    };
+
+    await tester.pumpWidget(wrapForTest(const DashboardScreen(), client));
+    await tester.pumpAndSettle();
+
+    expect(find.text('nightly'), findsWidgets);
+    expect(find.text('Running: ARCHIVE'), findsOneWidget);
   });
 }

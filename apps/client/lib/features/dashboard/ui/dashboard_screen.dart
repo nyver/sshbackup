@@ -22,6 +22,9 @@ class DashboardScreen extends ConsumerWidget {
     final jobs = ref.watch(jobsListProvider);
     final recentRuns = ref.watch(recentRunsProvider);
     final activeRuns = ref.watch(activeRunsProvider);
+    final jobNameById = {
+      for (final j in jobs.value ?? const <JobDto>[]) j.id: j.name,
+    };
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navDashboard)),
@@ -44,7 +47,11 @@ class DashboardScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                for (final run in activeRuns) _ActiveRunCard(run: run),
+                for (final run in activeRuns)
+                  _ActiveRunCard(
+                    run: run,
+                    jobName: jobNameById[run.jobId] ?? run.jobId,
+                  ),
                 const SizedBox(height: 24),
               ],
               Text(
@@ -109,10 +116,12 @@ class DashboardScreen extends ConsumerWidget {
                         for (final run in runs.take(10))
                           ListTile(
                             leading: StatusBadge(status: run.status),
-                            title: Text(formatTimestamp(run.startedAt)),
-                            subtitle: run.errorMessage.isNotEmpty
-                                ? Text(run.errorMessage)
-                                : null,
+                            title: Text(jobNameById[run.jobId] ?? run.jobId),
+                            subtitle: Text(
+                              run.errorMessage.isNotEmpty
+                                  ? '${formatTimestamp(run.startedAt)} — ${run.errorMessage}'
+                                  : formatTimestamp(run.startedAt),
+                            ),
                             trailing: run.archiveSize > 0
                                 ? Text(formatBytes(run.archiveSize))
                                 : null,
@@ -136,9 +145,10 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 class _ActiveRunCard extends ConsumerWidget {
-  const _ActiveRunCard({required this.run});
+  const _ActiveRunCard({required this.run, required this.jobName});
 
   final RunDto run;
+  final String jobName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -151,7 +161,8 @@ class _ActiveRunCard extends ConsumerWidget {
     return Card(
       child: ListTile(
         leading: const Icon(Icons.play_circle_outline),
-        title: Text(l10n.dashboardActiveRunStage(currentStage ?? '—')),
+        title: Text(jobName),
+        subtitle: Text(l10n.dashboardActiveRunStage(currentStage ?? '—')),
         trailing: StatusBadge(status: run.status),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
