@@ -19,15 +19,24 @@ import (
 var retryDelays = []time.Duration{5 * time.Second, 15 * time.Second, 30 * time.Second}
 
 // ConnectionParams carries everything needed to dial a server. Secret
-// material (Passphrase) must already be resolved by the caller (via
-// internal/secrets) — this package never touches the credential store.
+// material (Passphrase/Password) must already be resolved by the caller
+// (via internal/secrets) — this package never touches the credential
+// store.
 type ConnectionParams struct {
 	Host     string
 	Port     int
 	Username string
 
+	// AuthType selects how Auth is built: domain.AuthPassword uses
+	// Password; anything else (including the zero value, for backward
+	// compatibility with callers that only ever spoke PRIVATE_KEY) uses
+	// PrivateKeyPEM/Passphrase.
+	AuthType domain.AuthenticationType
+
 	PrivateKeyPEM []byte
 	Passphrase    string // empty when the key has no passphrase
+
+	Password string // used only when AuthType == domain.AuthPassword
 
 	// TrustedFingerprint is the SHA-256 fingerprint confirmed for this
 	// server. Dial refuses to proceed when it is empty: unattended runs
@@ -42,9 +51,18 @@ func (p ConnectionParams) addr() string {
 	return net.JoinHostPort(p.Host, strconv.Itoa(p.Port))
 }
 
-// buildAuthMethod parses the private key, decrypting it with Passphrase
-// when set.
+// buildAuthMethod returns password auth when p.AuthType is
+// domain.AuthPassword, otherwise parses the private key (decrypting it
+// with Passphrase when set) — the historical default, preserved for
+// callers that predate AuthType.
 func buildAuthMethod(p ConnectionParams) (ssh.AuthMethod, error) {
+	if p.AuthType == domain.AuthPassword {
+		if p.Password == "" {
+			return nil, domain.NewCodedError(domain.ErrSSHAuthFailed, "no password is configured for this server", nil)
+		}
+		return ssh.Password(p.Password), nil
+	}
+
 	var (
 		signer ssh.Signer
 		err    error

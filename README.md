@@ -123,9 +123,9 @@ be read as implying one is planned.
    Named Pipe (`\\.\pipe\VPSBackupManager`); if the service is not
    reachable, the client shows a clear "service unavailable" state with a
    retry action and performs no backup work of its own.
-3. Add a server (SSH host, username, private key path), confirm its host
-   key fingerprint, then add a job (source paths, optional pre/post
-   scripts, schedule, local destination).
+3. Add a server (SSH host, username, and either a private key path or a
+   password), confirm its host key fingerprint, then add a job (source
+   paths, optional pre/post scripts, schedule, local destination).
 4. Use `Validate job` to dry-run pre-flight checks (SSH reachability,
    host key, tooling, free space) without touching backup scripts, or
    `Run now` to start a real backup immediately.
@@ -147,7 +147,11 @@ by using a dedicated, least-privilege SSH user for backups rather than
   paths, write access to the remote temp directory, and — if a script
   runs `docker compose down/up` or similar — membership in the relevant
   group (e.g. `docker`) rather than blanket `sudo`.
-- Prefer a dedicated key pair per server over reusing a personal key.
+- Prefer private-key authentication with a dedicated key pair per server
+  over reusing a personal key, and over password authentication —
+  passwords are supported for servers that only offer them, but a key is
+  not guessable/brute-forceable and can be revoked independently of the
+  account's login password.
 - Review each script's command text before saving; the client shows an
   unobtrusive warning for commands that look destructive (e.g. `rm -rf`,
   `docker compose down`) but never blocks or rewrites them.

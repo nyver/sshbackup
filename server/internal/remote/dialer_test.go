@@ -167,3 +167,47 @@ func TestDial_ConnectionParams_Addr(t *testing.T) {
 		t.Errorf("addr() = %q, want %q", got, want)
 	}
 }
+
+func TestDial_PasswordAuthFailureIsNotRetried(t *testing.T) {
+	t.Parallel()
+	srv := startTCPTestServer(t, &ssh.ServerConfig{
+		PasswordCallback: func(ssh.ConnMetadata, []byte) (*ssh.Permissions, error) {
+			return nil, fmt.Errorf("access denied")
+		},
+	}, nil)
+
+	host, portStr, err := net.SplitHostPort(srv.Addr)
+	if err != nil {
+		t.Fatalf("split host/port: %v", err)
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		t.Fatalf("parse port: %v", err)
+	}
+
+	clock := &fakeClock{}
+	_, err = Dial(context.Background(), ConnectionParams{
+		Host: host, Port: port, Username: "test",
+		AuthType:           domain.AuthPassword,
+		Password:           "wrong-password",
+		TrustedFingerprint: ssh.FingerprintSHA256(srv.HostKey.PublicKey()),
+		ConnectTimeout:     2 * time.Second,
+	}, clock)
+
+	code, ok := domain.CodeOf(err)
+	if !ok || code != domain.ErrSSHAuthFailed {
+		t.Fatalf("Dial() error = %v, want SSH_AUTH_FAILED", err)
+	}
+	if len(clock.sleeps) != 0 {
+		t.Errorf("expected no retry backoff for a password auth failure, got %v", clock.sleeps)
+	}
+}
+
+func TestBuildAuthMethod_PasswordAuthRequiresPassword(t *testing.T) {
+	t.Parallel()
+	_, err := buildAuthMethod(ConnectionParams{AuthType: domain.AuthPassword})
+	code, ok := domain.CodeOf(err)
+	if !ok || code != domain.ErrSSHAuthFailed {
+		t.Fatalf("buildAuthMethod() error = %v, want SSH_AUTH_FAILED", err)
+	}
+}

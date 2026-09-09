@@ -15,7 +15,9 @@ func NewConnector(clock Clock) backup.Connector {
 	return func(ctx context.Context, p backup.ConnectParams) (backup.Transport, error) {
 		client, err := Dial(ctx, ConnectionParams{
 			Host: p.Server.Host, Port: p.Server.Port, Username: p.Server.Username,
+			AuthType:      p.Server.AuthType,
 			PrivateKeyPEM: p.PrivateKeyPEM, Passphrase: p.Passphrase,
+			Password:           p.Password,
 			TrustedFingerprint: p.Server.HostKeyFingerprint,
 			ConnectTimeout:     time.Duration(p.Server.ConnectionTimeoutSeconds) * time.Second,
 			CommandTimeout:     time.Duration(p.Server.CommandTimeoutSeconds) * time.Second,

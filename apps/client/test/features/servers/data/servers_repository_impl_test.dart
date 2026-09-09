@@ -70,6 +70,36 @@ void main() {
     );
   });
 
+  test(
+    'create sends PASSWORD auth with the password under passphrase',
+    () async {
+      client.handlers['servers.create'] = (payload) {
+        final map = payload! as Map<String, dynamic>;
+        expect(map['auth_type'], 'PASSWORD');
+        expect(map.containsKey('private_key_path'), isFalse);
+        expect(map['passphrase'], 'correct-horse');
+        return {
+          'server': serverJson()
+            ..['auth_type'] = 'PASSWORD'
+            ..['has_credential'] = true,
+        };
+      };
+
+      final result = await repository.create(
+        const SaveServerInput(
+          name: 'prod',
+          host: 'h',
+          port: 22,
+          username: 'u',
+          authType: 'PASSWORD',
+          passphrase: 'correct-horse',
+        ),
+      );
+
+      expect(result.authType, 'PASSWORD');
+    },
+  );
+
   test('testConnection surfaces an unverified host key', () async {
     client.handlers['servers.testConnection'] = (payload) {
       expect((payload! as Map<String, dynamic>)['server_id'], 's1');

@@ -37,6 +37,19 @@ func TestNewServer(t *testing.T) {
 			params:  NewServerParams{Name: "prod", Host: "1.2.3.4", Username: "deploy", AuthType: AuthPrivateKey},
 			wantErr: true,
 		},
+		{
+			name: "valid with password",
+			params: NewServerParams{
+				Name: "prod", Host: "1.2.3.4", Username: "deploy",
+				AuthType: AuthPassword, CredentialReference: "ref-1",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "password auth without a stored password",
+			params:  NewServerParams{Name: "prod", Host: "1.2.3.4", Username: "deploy", AuthType: AuthPassword},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

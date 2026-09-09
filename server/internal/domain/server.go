@@ -112,6 +112,9 @@ func (s *Server) Validate() error {
 	if s.AuthType == AuthPrivateKey && s.PrivateKeyPath == "" {
 		errs = append(errs, errors.New("private key path must not be empty for PRIVATE_KEY authentication"))
 	}
+	if s.AuthType == AuthPassword && s.CredentialReference == "" {
+		errs = append(errs, errors.New("a password must be set for PASSWORD authentication"))
+	}
 	return errors.Join(errs...)
 }
 

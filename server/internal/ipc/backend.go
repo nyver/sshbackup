@@ -86,44 +86,60 @@ func (b *Backend) clock() scheduler.Clock {
 	return scheduler.SystemClock{}
 }
 
-// resolveCredentials reads the private key file and, if the server has a
-// stored passphrase, decrypts it. It never logs or returns the plaintext
-// beyond the caller's immediate use.
-func resolveCredentials(secretsStore SecretsStore, server *domain.Server) (privateKeyPEM []byte, passphrase string, err error) {
-	privateKeyPEM, err = os.ReadFile(server.PrivateKeyPath) //nolint:gosec // path is an admin-configured server setting, not external input
-	if err != nil {
-		return nil, "", domain.NewCodedError(domain.ErrSSHAuthFailed,
-			fmt.Sprintf("could not read private key %q", server.PrivateKeyPath), err)
-	}
+// resolveCredentials resolves whatever a server's AuthType needs: for
+// PRIVATE_KEY, the key file plus its decrypted passphrase (if any); for
+// PASSWORD, just the decrypted password (privateKeyPEM is nil). It never
+// logs or returns the plaintext beyond the caller's immediate use.
+func resolveCredentials(secretsStore SecretsStore, server *domain.Server) (privateKeyPEM []byte, secret string, err error) {
 	if server.CredentialReference != "" {
 		secretBytes, loadErr := secretsStore.Load(server.CredentialReference)
 		if loadErr != nil {
 			return nil, "", loadErr
 		}
-		passphrase = string(secretBytes)
+		secret = string(secretBytes)
 	}
-	return privateKeyPEM, passphrase, nil
+
+	if server.AuthType == domain.AuthPassword {
+		return nil, secret, nil
+	}
+
+	privateKeyPEM, err = os.ReadFile(server.PrivateKeyPath) //nolint:gosec // path is an admin-configured server setting, not external input
+	if err != nil {
+		return nil, "", domain.NewCodedError(domain.ErrSSHAuthFailed,
+			fmt.Sprintf("could not read private key %q", server.PrivateKeyPath), err)
+	}
+	return privateKeyPEM, secret, nil
 }
 
 func (b *Backend) connectParams(server *domain.Server) (backup.ConnectParams, error) {
-	key, pass, err := resolveCredentials(b.Secrets, server)
+	key, secret, err := resolveCredentials(b.Secrets, server)
 	if err != nil {
 		return backup.ConnectParams{}, err
 	}
-	return backup.ConnectParams{Server: server, PrivateKeyPEM: key, Passphrase: pass}, nil
+	if server.AuthType == domain.AuthPassword {
+		return backup.ConnectParams{Server: server, Password: secret}, nil
+	}
+	return backup.ConnectParams{Server: server, PrivateKeyPEM: key, Passphrase: secret}, nil
 }
 
 func (b *Backend) connectionParams(server *domain.Server, trustedFingerprint string) (remote.ConnectionParams, error) {
-	key, pass, err := resolveCredentials(b.Secrets, server)
+	key, secret, err := resolveCredentials(b.Secrets, server)
 	if err != nil {
 		return remote.ConnectionParams{}, err
 	}
-	return remote.ConnectionParams{
+	params := remote.ConnectionParams{
 		Host: server.Host, Port: server.Port, Username: server.Username,
-		PrivateKeyPEM: key, Passphrase: pass, TrustedFingerprint: trustedFingerprint,
+		AuthType: server.AuthType, TrustedFingerprint: trustedFingerprint,
 		ConnectTimeout: time.Duration(server.ConnectionTimeoutSeconds) * time.Second,
 		CommandTimeout: time.Duration(server.CommandTimeoutSeconds) * time.Second,
-	}, nil
+	}
+	if server.AuthType == domain.AuthPassword {
+		params.Password = secret
+	} else {
+		params.PrivateKeyPEM = key
+		params.Passphrase = secret
+	}
+	return params, nil
 }
 
 func (b *Backend) nextRunAt(job *domain.Job) string {

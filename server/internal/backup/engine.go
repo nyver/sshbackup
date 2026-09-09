@@ -12,12 +12,15 @@ import (
 
 // ConnectParams carries what a Connector needs to open a Transport for one
 // run. Credential material is already resolved by the caller (private key
-// bytes read from disk, passphrase decrypted via internal/secrets) so the
-// engine itself never touches the filesystem or DPAPI for secrets.
+// bytes read from disk, or the password/passphrase decrypted via
+// internal/secrets) so the engine itself never touches the filesystem or
+// DPAPI for secrets. Which of Passphrase/Password is used is determined by
+// Server.AuthType.
 type ConnectParams struct {
 	Server        *domain.Server
 	PrivateKeyPEM []byte
 	Passphrase    string
+	Password      string
 }
 
 // Connector opens a Transport for a run. Production wiring is

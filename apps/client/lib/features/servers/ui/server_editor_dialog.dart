@@ -37,11 +37,19 @@ class _ServerEditorDialogState extends ConsumerState<_ServerEditorDialog> {
   late final TextEditingController _port;
   late final TextEditingController _username;
   late final TextEditingController _privateKeyPath;
-  late final TextEditingController _passphrase;
+
+  /// The one secret this server's credential holds: the private key's
+  /// passphrase when [_authType] is `PRIVATE_KEY`, or the login password
+  /// when it is `PASSWORD` — mirroring `SaveServerRequest.Passphrase` on
+  /// the wire, which is reused the same way rather than adding a second
+  /// field for what is, underneath, always "the one stored secret".
+  late final TextEditingController _secret;
+  late String _authType;
   bool _saving = false;
   String? _errorMessage;
 
   bool get _isEdit => widget.existing != null;
+  bool get _isPrivateKey => _authType == 'PRIVATE_KEY';
 
   @override
   void initState() {
@@ -52,7 +60,8 @@ class _ServerEditorDialogState extends ConsumerState<_ServerEditorDialog> {
     _port = TextEditingController(text: (e?.port ?? 22).toString());
     _username = TextEditingController(text: e?.username ?? '');
     _privateKeyPath = TextEditingController();
-    _passphrase = TextEditingController();
+    _secret = TextEditingController();
+    _authType = e?.authType ?? 'PRIVATE_KEY';
   }
 
   @override
@@ -62,7 +71,7 @@ class _ServerEditorDialogState extends ConsumerState<_ServerEditorDialog> {
     _port.dispose();
     _username.dispose();
     _privateKeyPath.dispose();
-    _passphrase.dispose();
+    _secret.dispose();
     super.dispose();
   }
 
@@ -76,8 +85,12 @@ class _ServerEditorDialogState extends ConsumerState<_ServerEditorDialog> {
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
-    if (!_isEdit && _privateKeyPath.text.trim().isEmpty) {
+    if (!_isEdit && _isPrivateKey && _privateKeyPath.text.trim().isEmpty) {
       setState(() => _errorMessage = l10n.serverPrivateKeyRequired);
+      return;
+    }
+    if (!_isEdit && !_isPrivateKey && _secret.text.isEmpty) {
+      setState(() => _errorMessage = l10n.serverPasswordRequired);
       return;
     }
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -91,9 +104,9 @@ class _ServerEditorDialogState extends ConsumerState<_ServerEditorDialog> {
       host: _host.text.trim(),
       port: int.parse(_port.text.trim()),
       username: _username.text.trim(),
-      authType: 'PRIVATE_KEY',
-      privateKeyPath: _privateKeyPath.text.trim(),
-      passphrase: _passphrase.text,
+      authType: _authType,
+      privateKeyPath: _isPrivateKey ? _privateKeyPath.text.trim() : '',
+      passphrase: _secret.text,
     );
     try {
       final notifier = ref.read(serversListProvider.notifier);
@@ -174,39 +187,69 @@ class _ServerEditorDialogState extends ConsumerState<_ServerEditorDialog> {
                       : null,
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _privateKeyPath,
-                        decoration: InputDecoration(
-                          labelText: l10n.serverFieldPrivateKeyPath,
-                          helperText: _isEdit
-                              ? l10n.serverFieldPrivateKeyPathKeepHint
-                              : null,
-                        ),
-                      ),
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(
+                      value: 'PRIVATE_KEY',
+                      label: Text(l10n.serverAuthPrivateKey),
+                      icon: const Icon(Icons.vpn_key_outlined),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      tooltip: l10n.serverFieldPrivateKeyBrowse,
-                      icon: const Icon(Icons.folder_open),
-                      onPressed: _pickPrivateKey,
+                    ButtonSegment(
+                      value: 'PASSWORD',
+                      label: Text(l10n.serverAuthPassword),
+                      icon: const Icon(Icons.password_outlined),
                     ),
                   ],
+                  selected: {_authType},
+                  onSelectionChanged: (selection) =>
+                      setState(() => _authType = selection.first),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _passphrase,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: l10n.serverFieldPassphrase,
-                    helperText: _isEdit
-                        ? l10n.serverFieldPassphraseKeepHint
-                        : null,
+                if (_isPrivateKey) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _privateKeyPath,
+                          decoration: InputDecoration(
+                            labelText: l10n.serverFieldPrivateKeyPath,
+                            helperText: _isEdit
+                                ? l10n.serverFieldPrivateKeyPathKeepHint
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: l10n.serverFieldPrivateKeyBrowse,
+                        icon: const Icon(Icons.folder_open),
+                        onPressed: _pickPrivateKey,
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _secret,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: l10n.serverFieldPassphrase,
+                      helperText: _isEdit
+                          ? l10n.serverFieldPassphraseKeepHint
+                          : null,
+                    ),
+                  ),
+                ] else
+                  TextFormField(
+                    controller: _secret,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: l10n.serverFieldPassword,
+                      helperText: _isEdit
+                          ? l10n.serverFieldPasswordKeepHint
+                          : null,
+                    ),
+                  ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Text(

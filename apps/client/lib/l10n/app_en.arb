@@ -56,6 +56,11 @@
   "serverFieldPassphrase": "Key passphrase (optional)",
   "serverFieldPassphraseKeepHint": "Leave blank to keep the current passphrase",
   "serverPrivateKeyRequired": "A private key file is required.",
+  "serverAuthPrivateKey": "Private key",
+  "serverAuthPassword": "Username & password",
+  "serverFieldPassword": "Password",
+  "serverFieldPasswordKeepHint": "Leave blank to keep the current password",
+  "serverPasswordRequired": "A password is required.",
   "serverDeleteConfirmTitle": "Delete server?",
   "serverDeleteConfirmBody": "\"{name}\" will be removed. Existing job history is not affected.",
   "@serverDeleteConfirmBody": {

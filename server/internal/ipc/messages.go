@@ -28,8 +28,12 @@ type ListServersResponse struct {
 }
 
 // SaveServerRequest is the payload for both servers.create and
-// servers.update. Passphrase, if set, replaces any existing credential;
-// it is write-only and never echoed back.
+// servers.update. Passphrase carries the one secret a server's
+// credential_reference stores: the private key's passphrase when
+// AuthType is PRIVATE_KEY, or the login password when AuthType is
+// PASSWORD. If set, it replaces any existing credential; it is
+// write-only and never echoed back. Leaving it empty on an update keeps
+// the credential already stored.
 type SaveServerRequest struct {
 	ID                       string `json:"id,omitempty"` // empty on create
 	Name                     string `json:"name"`
