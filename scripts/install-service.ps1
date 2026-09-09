@@ -17,14 +17,19 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$ExePath = (Join-Path $PSScriptRoot "..\server\bin\vpsbackupservice.exe")
+    [string]$ExePath
 )
 
 $ErrorActionPreference = "Stop"
 
+if (-not $ExePath) {
+    $ScriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $PSCommandPath }
+    $ExePath = Join-Path $ScriptRoot "..\server\bin\vpsbackupservice.exe"
+}
+
 $ServiceName = "SSH Backup Manager Service"
 $DisplayName = "SSH Backup Manager Service"
-$Description = "Runs scheduled VPS backups over SSH. See https://github.com/ for documentation."
+$Description = "Runs scheduled VPS backups over SSH. See https://github.com/nyver/sshbackup for documentation."
 
 $resolvedExe = (Resolve-Path -Path $ExePath -ErrorAction Stop).Path
 
