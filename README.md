@@ -230,3 +230,7 @@ client.
 The race detector and some `golangci-lint` checks require `CGO_ENABLED=1`
 and a C toolchain. Where unavailable, note it explicitly in your report
 rather than skipping silently.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
