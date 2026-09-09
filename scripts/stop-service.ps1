@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Stops the VPS Backup Manager Service gracefully. Requires an elevated
+    Stops the SSH Backup Manager Service gracefully. Requires an elevated
     prompt.
 
 .DESCRIPTION
@@ -14,7 +14,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$ServiceName = "VPS Backup Manager Service"
+$ServiceName = "SSH Backup Manager Service"
 
 Stop-Service -Name $ServiceName
 try {

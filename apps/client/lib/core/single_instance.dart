@@ -11,7 +11,7 @@ const _mutexName = r'Local\VPSBackupManagerUI-SingleInstance';
 /// specification, "Second launch"). Must match [AppLocalizations.appTitle]
 /// in the default locale, since window_manager sets the OS window title
 /// from it.
-const _windowTitle = 'VPS Backup Manager';
+const _windowTitle = 'SSH Backup Manager';
 
 typedef _CreateMutexWNative = Pointer<Void> Function(
   Pointer<Void> lpMutexAttributes,

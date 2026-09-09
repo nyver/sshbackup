@@ -1,4 +1,4 @@
-# VPS Backup Manager
+# SSH Backup Manager
 
 An agentless, SSH-based backup orchestrator for self-hosted VPS servers on
 Windows. A background Windows Service runs scheduled backups — stop a
@@ -209,7 +209,7 @@ follows (layering, testing, security, and commit rules).
 
 **Client shows "Background service unavailable".**
 The service is not running, or its named pipe isn't reachable. Check
-`Get-Service "VPS Backup Manager Service"`; if stopped, start it. In
+`Get-Service "SSH Backup Manager Service"`; if stopped, start it. In
 `--console` mode, check stderr directly; otherwise check the structured
 logs under `%ProgramData%\VPSBackupManager\logs\`.
 

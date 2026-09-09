@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "VPS Backup Manager",
+  "appTitle": "SSH Backup Manager",
   "@appTitle": {
     "description": "The application title, shown in the window title bar."
   },
@@ -12,7 +12,7 @@
   "@serviceUnavailableTitle": {
     "description": "Title shown when the client cannot reach the background service."
   },
-  "serviceUnavailableMessage": "The VPS Backup Manager service is not reachable. Scheduled backups will not run until it is back online. No backups can be started from this window while it is unavailable.",
+  "serviceUnavailableMessage": "The SSH Backup Manager service is not reachable. Scheduled backups will not run until it is back online. No backups can be started from this window while it is unavailable.",
   "@serviceUnavailableMessage": {
     "description": "Explains that the service is down and no local fallback execution exists."
   },

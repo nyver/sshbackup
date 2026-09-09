@@ -22,7 +22,7 @@ void main() async {
     size: Size(1200, 800),
     minimumSize: Size(900, 600),
     center: true,
-    title: 'VPS Backup Manager',
+    title: 'SSH Backup Manager',
   );
   unawaited(
     windowManager.waitUntilReadyToShow(windowOptions, () async {

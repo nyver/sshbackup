@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Registers VPS Backup Manager as a Windows Service (Automatic startup).
+    Registers SSH Backup Manager as a Windows Service (Automatic startup).
 
 .DESCRIPTION
     Must be run from an elevated (Administrator) PowerShell prompt. Copies
@@ -22,8 +22,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ServiceName = "VPS Backup Manager Service"
-$DisplayName = "VPS Backup Manager Service"
+$ServiceName = "SSH Backup Manager Service"
+$DisplayName = "SSH Backup Manager Service"
 $Description = "Runs scheduled VPS backups over SSH. See https://github.com/ for documentation."
 
 $resolvedExe = (Resolve-Path -Path $ExePath -ErrorAction Stop).Path

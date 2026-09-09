@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Stops and removes the VPS Backup Manager Windows Service registration.
+    Stops and removes the SSH Backup Manager Windows Service registration.
     Requires an elevated prompt.
 
 .DESCRIPTION
@@ -13,7 +13,7 @@
 param()
 
 $ErrorActionPreference = "Stop"
-$ServiceName = "VPS Backup Manager Service"
+$ServiceName = "SSH Backup Manager Service"
 
 $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if (-not $svc) {

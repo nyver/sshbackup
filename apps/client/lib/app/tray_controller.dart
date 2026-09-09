@@ -34,7 +34,7 @@ class _TrayControllerState extends ConsumerState<TrayController>
 
   Future<void> _initTray() async {
     await trayManager.setIcon('assets/tray_icon.ico');
-    await trayManager.setToolTip('VPS Backup Manager');
+    await trayManager.setToolTip('SSH Backup Manager');
     await _refreshMenu();
   }
 

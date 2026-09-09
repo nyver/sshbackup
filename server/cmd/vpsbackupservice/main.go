@@ -1,4 +1,4 @@
-// Command vpsbackupservice runs the VPS Backup Manager Windows Service
+// Command vpsbackupservice runs the SSH Backup Manager Windows Service
 // host: backup engine, scheduler, and Named Pipes IPC. It also supports a
 // --console foreground mode, sharing the same composition root, for
 // development and diagnostics.
@@ -13,7 +13,7 @@ import (
 )
 
 // ServiceName is the Windows Service name registered by scripts/.
-const ServiceName = "VPS Backup Manager Service"
+const ServiceName = "SSH Backup Manager Service"
 
 func main() {
 	console := flag.Bool("console", false, "run in the foreground instead of as a Windows Service")
