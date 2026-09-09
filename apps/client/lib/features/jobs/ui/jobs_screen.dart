@@ -156,6 +156,15 @@ class _JobCard extends ConsumerWidget {
               ),
             ),
             IconButton(
+              tooltip: l10n.jobClone,
+              icon: const Icon(Icons.copy_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => JobEditorScreen(cloneFrom: job),
+                ),
+              ),
+            ),
+            IconButton(
               tooltip: l10n.delete,
               icon: const Icon(Icons.delete_outline),
               onPressed: () => _confirmDelete(context, ref, job),

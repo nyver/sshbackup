@@ -114,6 +114,8 @@
 
   "jobAddTitle": "Add job",
   "jobEditTitle": "Edit job",
+  "jobCloneTitle": "Clone job",
+  "jobClone": "Clone",
   "jobsEmptyState": "No backup jobs yet. Add a job to schedule your first backup.",
   "jobDisabledBadge": "Disabled",
   "jobNextRun": "Next run: {when}",

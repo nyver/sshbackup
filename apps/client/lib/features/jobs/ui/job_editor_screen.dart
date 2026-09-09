@@ -24,9 +24,20 @@ const _weekdayLabelsSundayFirst = [
 ];
 
 class JobEditorScreen extends ConsumerStatefulWidget {
-  const JobEditorScreen({this.existing, super.key});
+  const JobEditorScreen({this.existing, this.cloneFrom, super.key})
+    : assert(
+        existing == null || cloneFrom == null,
+        'pass either existing (edit) or cloneFrom (clone as new), not both',
+      );
 
+  /// The job being edited in place. When set, saving updates this job.
   final JobDto? existing;
+
+  /// A job to pre-fill a *new* job's fields from (server, schedule,
+  /// scripts, sources, ...) without editing the original — saving creates
+  /// a separate job, per the desktop-ui "Jobs list and job editor"
+  /// pattern of never silently overwriting existing configuration.
+  final JobDto? cloneFrom;
 
   @override
   ConsumerState<JobEditorScreen> createState() => _JobEditorScreenState();
@@ -67,12 +78,15 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
   String? _errorMessage;
 
   bool get _isEdit => widget.existing != null;
+  bool get _isClone => widget.cloneFrom != null;
 
   @override
   void initState() {
     super.initState();
-    final e = widget.existing;
-    _name = TextEditingController(text: e?.name ?? '');
+    final e = widget.existing ?? widget.cloneFrom;
+    _name = TextEditingController(
+      text: _isClone ? _clonedName(e!.name) : (e?.name ?? ''),
+    );
     _enabled = e?.enabled ?? true;
     _serverId = e?.serverId;
 
@@ -119,6 +133,11 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
       text: e?.retentionPolicy.maxAgeDays?.toString() ?? '',
     );
   }
+
+  /// A cloned job's name defaults to `"<original name> (copy)"` rather
+  /// than reusing the original verbatim, so it's obviously distinct in
+  /// the jobs list and the user notices it's worth renaming.
+  String _clonedName(String original) => '$original (copy)';
 
   @override
   void dispose() {
@@ -228,7 +247,11 @@ class _JobEditorScreenState extends ConsumerState<JobEditorScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? l10n.jobEditTitle : l10n.jobAddTitle),
+        title: Text(
+          _isEdit
+              ? l10n.jobEditTitle
+              : (_isClone ? l10n.jobCloneTitle : l10n.jobAddTitle),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),

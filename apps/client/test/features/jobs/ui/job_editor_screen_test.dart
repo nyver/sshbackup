@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vps_backup_manager/core/ipc/ipc_client.dart';
+import 'package:vps_backup_manager/core/ipc/models.dart';
 import 'package:vps_backup_manager/features/jobs/ui/job_editor_screen.dart';
 
 import '../../../test_helpers/fake_ipc_client.dart';
@@ -75,6 +76,51 @@ void main() {
     expect(sentJob!['local_destination'], r'D:\Backups');
     // The editor is popped after a successful save.
     expect(find.byType(JobEditorScreen), findsNothing);
+  });
+
+  testWidgets('cloning a job pre-fills its fields and creates a separate job', (
+    tester,
+  ) async {
+    _useTallSurface(tester);
+    final client = FakeIpcClient();
+    client.setConnectionState(IpcConnectionState.connected);
+    client.handlers['servers.list'] = (_) => {
+      'servers': [serverJson()],
+    };
+    Map<String, dynamic>? sentJob;
+    client.handlers['jobs.create'] = (payload) {
+      sentJob =
+          (payload! as Map<String, dynamic>)['job'] as Map<String, dynamic>;
+      return {
+        'job': jobJson(id: 'cloned-job', name: sentJob!['name'] as String),
+      };
+    };
+    client.handlers['jobs.list'] = (_) => {'jobs': <Map<String, dynamic>>[]};
+
+    final original = JobDto.fromJson(jobJson());
+
+    await tester.pumpWidget(
+      wrapForTest(JobEditorScreen(cloneFrom: original), client),
+    );
+    await tester.pumpAndSettle();
+
+    // Pre-filled from the original job, and the title makes clear this
+    // is a new job, not an in-place edit.
+    expect(find.text('Clone job'), findsOneWidget);
+    expect(find.text('nightly (copy)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('job_save_button')));
+    await tester.pumpAndSettle();
+
+    expect(sentJob, isNotNull);
+    // An empty id tells the service this is a new job, not the clone
+    // source (jobs.create mints a fresh id and ignores this field).
+    expect(sentJob!['id'], '');
+    expect(sentJob!['name'], 'nightly (copy)');
+    expect(sentJob!['server_id'], original.serverId);
+    expect(sentJob!['local_destination'], original.localDestination);
+    // A clone creates a job; it must never update the original.
+    expect(client.sentRequests.any((r) => r.$1 == 'jobs.update'), isFalse);
   });
 
   testWidgets('a service error is shown without raw exception text', (
