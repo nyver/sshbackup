@@ -1,0 +1,9 @@
+{
+  "type": "response",
+  "id": "req-2",
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "job \"missing-id\" not found"
+  }
+}

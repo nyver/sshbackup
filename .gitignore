@@ -1,0 +1,49 @@
+# Documents and personal notes
+*.doc
+*.docx
+AGENTS.md
+CLAUDE.md
+openspec/
+.history/
+.claude/
+.agents/
+.cursor/
+.gigacode/
+
+# Secrets and local configuration
+config.yaml
+.env
+*.jks
+*.keystore
+key.properties
+android/local.properties
+
+# Build outputs
+build/
+.dart_tool/
+bin/
+dist/
+*.exe
+coverage/
+
+# Go
+server/*.log
+
+# Flutter/Dart
+apps/client/.dart_tool/
+apps/client/build/
+apps/client/.flutter-plugins
+apps/client/.flutter-plugins-dependencies
+apps/client/.pub-cache/
+apps/client/.pub/
+apps/client/windows/flutter/generated_plugin_registrant.cc
+apps/client/windows/flutter/generated_plugin_registrant.h
+apps/client/windows/flutter/generated_plugins.cmake
+apps/client/lib/l10n/gen/
+
+# Editors / OS
+.vscode/
+.idea/
+*.iml
+Thumbs.db
+.DS_Store

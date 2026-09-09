@@ -1,0 +1,16 @@
+{
+  "type": "event",
+  "event": "run.stepChanged",
+  "payload": {
+    "run_id": "c2d3e4f5061728394a5b6c7d8e9f0112",
+    "step": {
+      "id": "d3e4f5061728394a5b6c7d8e9f011223",
+      "type": "ARCHIVE",
+      "started_at": "2026-09-08T03:00:05Z",
+      "finished_at": "2026-09-08T03:04:12Z",
+      "status": "SUCCESS",
+      "truncated": false,
+      "duration_ms": 247000
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "response",
+  "id": "req-3",
+  "success": false,
+  "error": {
+    "code": "PROTOCOL_VERSION_MISMATCH",
+    "message": "protocol version mismatch: service supports 1, client sent 2; please update the application"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "response",
+  "id": "req-4",
+  "success": true,
+  "payload": {
+    "run_id": "c2d3e4f5061728394a5b6c7d8e9f0112",
+    "status": "RUNNING"
+  }
+}

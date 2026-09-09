@@ -1,0 +1,20 @@
+{
+  "type": "event",
+  "event": "run.finished",
+  "payload": {
+    "run": {
+      "id": "c2d3e4f5061728394a5b6c7d8e9f0112",
+      "job_id": "b1c2d3e4f5061728394a5b6c7d8e9f01",
+      "server_id": "5f9e1c2b7a3d4e6f8091a2b3c4d5e6f7",
+      "source_paths": ["/docker/volumes"],
+      "trigger": "MANUAL",
+      "started_at": "2026-09-08T03:00:00Z",
+      "finished_at": "2026-09-08T03:06:40Z",
+      "status": "SUCCESS",
+      "archive_name": "beresta_2026-09-08_03-00-00.tar.gz",
+      "archive_size": 445123456,
+      "checksum": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "recovery_outcome": "NOT_APPLICABLE"
+    }
+  }
+}

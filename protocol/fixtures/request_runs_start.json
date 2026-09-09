@@ -1,0 +1,9 @@
+{
+  "type": "request",
+  "id": "req-4",
+  "protocol_version": 1,
+  "command": "runs.start",
+  "payload": {
+    "job_id": "b1c2d3e4f5061728394a5b6c7d8e9f01"
+  }
+}

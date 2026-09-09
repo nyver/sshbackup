@@ -1,0 +1,24 @@
+{
+  "type": "response",
+  "id": "req-1",
+  "success": true,
+  "payload": {
+    "servers": [
+      {
+        "id": "5f9e1c2b7a3d4e6f8091a2b3c4d5e6f7",
+        "name": "prod",
+        "host": "203.0.113.5",
+        "port": 22,
+        "username": "deploy",
+        "auth_type": "PRIVATE_KEY",
+        "has_credential": true,
+        "host_key_algorithm": "ssh-ed25519",
+        "host_key_fingerprint": "SHA256:abcdefghijklmnopqrstuvwxyz0123456789ABCD",
+        "connection_timeout_seconds": 10,
+        "command_timeout_seconds": 30,
+        "created_at": "2026-09-01T12:00:00Z",
+        "updated_at": "2026-09-01T12:00:00Z"
+      }
+    ]
+  }
+}

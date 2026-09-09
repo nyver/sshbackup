@@ -1,0 +1,7 @@
+{
+  "type": "request",
+  "id": "req-1",
+  "protocol_version": 1,
+  "command": "servers.list",
+  "payload": null
+}
