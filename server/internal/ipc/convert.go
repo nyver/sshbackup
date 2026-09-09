@@ -129,7 +129,7 @@ func stepToDTO(s *domain.RunStep) StepDTO {
 	return StepDTO{
 		ID: s.ID, Type: string(s.Type), StartedAt: formatTime(s.StartedAt), FinishedAt: formatTimePtr(s.FinishedAt),
 		Status: string(s.Status), Output: s.Output, Truncated: s.Truncated, Error: s.Error,
-		ExitCode: s.ExitCode, DurationMs: s.Duration.Milliseconds(),
+		ExitCode: s.ExitCode, DurationMs: s.Duration.Milliseconds(), Command: s.Command,
 	}
 }
 

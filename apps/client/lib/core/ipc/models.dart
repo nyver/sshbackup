@@ -357,6 +357,7 @@ class StepDto {
     this.error = '',
     this.exitCode,
     this.durationMs = 0,
+    this.command = '',
   });
 
   factory StepDto.fromJson(Map<String, dynamic> j) => StepDto(
@@ -370,6 +371,7 @@ class StepDto {
     error: j['error'] as String? ?? '',
     exitCode: j['exit_code'] as int?,
     durationMs: j['duration_ms'] as int? ?? 0,
+    command: j['command'] as String? ?? '',
   );
 
   final String id;
@@ -382,6 +384,10 @@ class StepDto {
   final String error;
   final int? exitCode;
   final int durationMs;
+
+  /// The exact command text that ran, for PRE_BACKUP_SCRIPT/
+  /// POST_BACKUP_SCRIPT steps only — empty for every other step type.
+  final String command;
 }
 
 class SettingsDto {

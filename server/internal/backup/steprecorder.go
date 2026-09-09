@@ -48,12 +48,16 @@ func (r *stepRecorder) Finish(ctx context.Context, step *domain.RunStep) error {
 }
 
 // Skip creates and persists a step that never ran, per the
-// run-history specification's skipped-step requirement.
-func (r *stepRecorder) Skip(ctx context.Context, now time.Time, stepType domain.StepType, reason string) error {
+// run-history specification's skipped-step requirement. command is the
+// script command that would have run, if any (empty for non-script step
+// types); it is recorded even though the step never executed, so run
+// details can still show what was configured.
+func (r *stepRecorder) Skip(ctx context.Context, now time.Time, stepType domain.StepType, reason, command string) error {
 	step, err := domain.NewRunStep(now, r.runID, stepType)
 	if err != nil {
 		return err
 	}
+	step.Command = command
 	step.Skip(now, reason)
 	if err := r.steps.Create(ctx, step, r.position); err != nil {
 		return err

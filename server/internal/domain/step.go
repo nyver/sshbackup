@@ -20,9 +20,13 @@ type RunStep struct {
 	Truncated bool
 	Error     string
 
-	// ExitCode and Duration are populated for script steps only.
+	// ExitCode, Duration, and Command are populated for script steps
+	// only (PRE_BACKUP_SCRIPT/POST_BACKUP_SCRIPT); Command is the exact
+	// command text that ran, so a failed step's run details can show
+	// what was actually executed, not just its exit code/stderr.
 	ExitCode *int
 	Duration time.Duration
+	Command  string
 }
 
 // NewRunStep constructs a step in RUNNING status.

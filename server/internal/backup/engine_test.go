@@ -212,17 +212,29 @@ func TestEngine_Run_OnSuccessScriptSkippedAfterFailure(t *testing.T) {
 		t.Fatalf("run = %+v, want FAILED/PRE_SCRIPT_FAILED", run)
 	}
 
-	var sawSkippedPost bool
+	var sawSkippedPost, sawFailedPre bool
 	for _, s := range steps.StepsFor(run.ID) {
-		if s.Type == domain.StepPostBackupScript {
+		switch s.Type {
+		case domain.StepPostBackupScript:
 			sawSkippedPost = true
 			if s.Status != domain.StepSkipped {
 				t.Errorf("POST_BACKUP step status = %q, want SKIPPED", s.Status)
+			}
+			if s.Command != "post-on-success" {
+				t.Errorf("skipped POST_BACKUP step Command = %q, want %q (what would have run)", s.Command, "post-on-success")
+			}
+		case domain.StepPreBackupScript:
+			sawFailedPre = true
+			if s.Command != "pre-fails" {
+				t.Errorf("failed PRE_BACKUP step Command = %q, want %q", s.Command, "pre-fails")
 			}
 		}
 	}
 	if !sawSkippedPost {
 		t.Fatal("expected a POST_BACKUP script step to be recorded as skipped")
+	}
+	if !sawFailedPre {
+		t.Fatal("expected a PRE_BACKUP script step to be recorded")
 	}
 }
 

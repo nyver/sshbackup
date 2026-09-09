@@ -204,6 +204,7 @@
   "recoveryOutcomeSuccess": "Succeeded",
   "recoveryOutcomeFailed": "Failed — the remote side may still need attention",
   "runDetailsSteps": "Steps",
+  "runDetailsCommand": "Command",
   "runDetailsOutputTruncated": "[output truncated]",
   "runDetailsNoOutput": "No output recorded for this step.",
 

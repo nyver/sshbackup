@@ -22,11 +22,11 @@ func NewStepRepository(db *DB) *StepRepository {
 // Create inserts a new step at the given position within its run.
 func (r *StepRepository) Create(ctx context.Context, step *domain.RunStep, position int) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO run_steps (id, run_id, step_type, position, started_at, finished_at, status, output, truncated, error, exit_code, duration_ms)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		INSERT INTO run_steps (id, run_id, step_type, position, started_at, finished_at, status, output, truncated, error, exit_code, duration_ms, command)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		step.ID, step.RunID, string(step.Type), position, formatTime(step.StartedAt), formatTimePtr(step.FinishedAt),
 		string(step.Status), truncateOutput(step.Output), boolToInt(step.Truncated), step.Error,
-		nullInt(step.ExitCode), step.Duration.Milliseconds(),
+		nullInt(step.ExitCode), step.Duration.Milliseconds(), step.Command,
 	)
 	if err != nil {
 		return fmt.Errorf("insert step %q: %w", step.ID, err)
@@ -38,10 +38,10 @@ func (r *StepRepository) Create(ctx context.Context, step *domain.RunStep, posit
 func (r *StepRepository) Update(ctx context.Context, step *domain.RunStep) error {
 	res, err := r.db.ExecContext(ctx, `
 		UPDATE run_steps SET
-			finished_at = ?, status = ?, output = ?, truncated = ?, error = ?, exit_code = ?, duration_ms = ?
+			finished_at = ?, status = ?, output = ?, truncated = ?, error = ?, exit_code = ?, duration_ms = ?, command = ?
 		WHERE id = ?`,
 		formatTimePtr(step.FinishedAt), string(step.Status), truncateOutput(step.Output), boolToInt(step.Truncated),
-		step.Error, nullInt(step.ExitCode), step.Duration.Milliseconds(), step.ID,
+		step.Error, nullInt(step.ExitCode), step.Duration.Milliseconds(), step.Command, step.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("update step %q: %w", step.ID, err)
@@ -52,7 +52,7 @@ func (r *StepRepository) Update(ctx context.Context, step *domain.RunStep) error
 // ListByRun returns every step of a run, in execution order.
 func (r *StepRepository) ListByRun(ctx context.Context, runID string) ([]*domain.RunStep, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, run_id, step_type, started_at, finished_at, status, output, truncated, error, exit_code, duration_ms
+		SELECT id, run_id, step_type, started_at, finished_at, status, output, truncated, error, exit_code, duration_ms, command
 		FROM run_steps WHERE run_id = ? ORDER BY position`, runID)
 	if err != nil {
 		return nil, fmt.Errorf("list steps for run %q: %w", runID, err)
@@ -95,7 +95,7 @@ func scanStep(row rowScanner) (*domain.RunStep, error) {
 	)
 	if err := row.Scan(
 		&step.ID, &step.RunID, &stepType, &startedAt, &finishedAt, &status,
-		&step.Output, &truncated, &step.Error, &exitCode, &durationMs,
+		&step.Output, &truncated, &step.Error, &exitCode, &durationMs, &step.Command,
 	); err != nil {
 		return nil, err
 	}

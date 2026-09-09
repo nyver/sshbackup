@@ -209,6 +209,7 @@ class _StepTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
+        initiallyExpanded: step.status == 'FAILED',
         title: Row(
           children: [
             Expanded(child: Text(step.type)),
@@ -219,12 +220,50 @@ class _StepTile extends StatelessWidget {
             StatusBadge(status: step.status),
           ],
         ),
+        // A collapsed script step otherwise shows only its type, and a
+        // job commonly has several PRE_BACKUP_SCRIPT/POST_BACKUP_SCRIPT
+        // steps — the command preview is what tells them apart at a
+        // glance, before expanding.
+        subtitle: step.command.isEmpty
+            ? null
+            : Text(
+                step.command,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(fontFamily: 'monospace'),
+              ),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (step.command.isNotEmpty) ...[
+                  Text(
+                    l10n.runDetailsCommand,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: SelectableText(
+                      step.command,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
                 if (step.error.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),

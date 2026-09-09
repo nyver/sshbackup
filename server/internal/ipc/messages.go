@@ -259,7 +259,10 @@ type GetRunRequest struct {
 	ID string `json:"id"`
 }
 
-// StepDTO is one run step as exposed over IPC.
+// StepDTO is one run step as exposed over IPC. Command is set only for
+// PRE_BACKUP_SCRIPT/POST_BACKUP_SCRIPT steps — the exact command text
+// that ran, so a failed step's run details can show what was actually
+// executed.
 type StepDTO struct {
 	ID         string `json:"id"`
 	Type       string `json:"type"`
@@ -271,6 +274,7 @@ type StepDTO struct {
 	Error      string `json:"error,omitempty"`
 	ExitCode   *int   `json:"exit_code,omitempty"`
 	DurationMs int64  `json:"duration_ms,omitempty"`
+	Command    string `json:"command,omitempty"`
 }
 
 // GetRunResponse answers runs.get: run details with steps and logs.

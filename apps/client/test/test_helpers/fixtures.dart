@@ -80,6 +80,7 @@ Map<String, dynamic> stepJson({
   String id = 'st1',
   String type = 'ARCHIVE',
   String status = 'SUCCESS',
+  String command = '',
 }) => {
   'id': id,
   'type': type,
@@ -89,6 +90,7 @@ Map<String, dynamic> stepJson({
   'output': '',
   'truncated': false,
   'duration_ms': 60000,
+  'command': command,
 };
 
 Map<String, dynamic> settingsJson({bool schedulesPaused = false}) => {

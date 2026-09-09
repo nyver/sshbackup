@@ -61,12 +61,17 @@ func TestMigrate_IdempotentOnRepeatedStart(t *testing.T) {
 		t.Fatalf("second Migrate() error = %v", err)
 	}
 
+	migrations, err := loadMigrations()
+	if err != nil {
+		t.Fatalf("loadMigrations() error = %v", err)
+	}
+
 	var appliedCount int
 	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM schema_migrations").Scan(&appliedCount); err != nil {
 		t.Fatalf("count schema_migrations rows: %v", err)
 	}
-	if appliedCount != 1 {
-		t.Errorf("expected exactly one applied migration row, got %d", appliedCount)
+	if appliedCount != len(migrations) {
+		t.Errorf("expected exactly one applied row per migration (%d), got %d", len(migrations), appliedCount)
 	}
 
 	var settingsRows int

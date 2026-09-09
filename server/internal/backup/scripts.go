@@ -72,7 +72,7 @@ func (rc *runContext) runScripts(scriptType domain.ScriptType) {
 			return
 		}
 		if !script.ShouldRun(rc.failed) {
-			if err := rc.steps.Skip(rc.ctx, rc.now(), stepType, "preceding stage did not meet this script's run condition"); err != nil {
+			if err := rc.steps.Skip(rc.ctx, rc.now(), stepType, "preceding stage did not meet this script's run condition", script.Command); err != nil {
 				rc.engine.logger().Error("persist skipped script step", "run_id", rc.run.ID, "error", err)
 			}
 			continue
@@ -103,6 +103,7 @@ func (rc *runContext) runScriptRecorded(ctx context.Context, script domain.Scrip
 		rc.engine.logger().Error("start script step", "run_id", rc.run.ID, "error", err)
 		return err
 	}
+	step.Command = script.Command
 
 	runErr := rc.executeScript(ctx, script)
 	status := domain.StepSuccess

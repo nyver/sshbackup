@@ -27,6 +27,33 @@ void main() {
     expect(find.text('Cancel run'), findsNothing);
   });
 
+  testWidgets('a failed script step shows its command and starts expanded', (
+    tester,
+  ) async {
+    final client = FakeIpcClient();
+    client.setConnectionState(IpcConnectionState.connected);
+    client.handlers['runs.get'] = (_) => {
+      'run': runJson(status: 'FAILED'),
+      'steps': [
+        stepJson(
+          type: 'PRE_BACKUP_SCRIPT',
+          status: 'FAILED',
+          command: 'docker compose down',
+        ),
+      ],
+    };
+
+    await tester.pumpWidget(
+      wrapForTest(const RunDetailsScreen(runId: 'r1'), client),
+    );
+    await tester.pumpAndSettle();
+
+    // The command shows in the collapsed subtitle and, since the step
+    // starts expanded on failure, also in the expanded command block —
+    // so it appears twice rather than needing a manual expand first.
+    expect(find.text('docker compose down'), findsNWidgets(2));
+  });
+
   testWidgets('an active run offers cancel, which sends runs.cancel', (
     tester,
   ) async {
