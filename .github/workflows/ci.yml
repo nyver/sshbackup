@@ -42,11 +42,12 @@ jobs:
         run: go vet ./...
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: server
-          args: --timeout=5m
+        # Built from source with the toolchain from setup-go above, rather
+        # than via golangci-lint-action's prebuilt binary: the latest
+        # prebuilt release lags behind and refuses to run ("the Go language
+        # version used to build golangci-lint is lower than the targeted
+        # Go version"). Building from source always matches our toolchain.
+        run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run --timeout=5m
 
       - name: go build
         run: go build ./...
