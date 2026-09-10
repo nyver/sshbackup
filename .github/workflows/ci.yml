@@ -32,8 +32,7 @@ jobs:
 
       - name: gofumpt
         run: |
-          go install mvdan.cc/gofumpt@latest
-          $out = gofumpt -l .
+          $out = go run mvdan.cc/gofumpt@latest -l .
           if ($out) {
             Write-Output $out
             exit 1
