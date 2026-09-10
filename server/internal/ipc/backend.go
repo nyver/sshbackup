@@ -86,11 +86,15 @@ func (b *Backend) clock() scheduler.Clock {
 	return scheduler.SystemClock{}
 }
 
-// resolveCredentials resolves whatever a server's AuthType needs: for
+// ResolveCredentials resolves whatever a server's AuthType needs: for
 // PRIVATE_KEY, the key file plus its decrypted passphrase (if any); for
 // PASSWORD, just the decrypted password (privateKeyPEM is nil). It never
 // logs or returns the plaintext beyond the caller's immediate use.
-func resolveCredentials(secretsStore SecretsStore, server *domain.Server) (privateKeyPEM []byte, secret string, err error) {
+//
+// Exported so callers outside this package (the scheduler's job runner)
+// resolve credentials the same way manual runs do, rather than duplicating
+// (and risking diverging from) the AuthType branch.
+func ResolveCredentials(secretsStore SecretsStore, server *domain.Server) (privateKeyPEM []byte, secret string, err error) {
 	if server.CredentialReference != "" {
 		secretBytes, loadErr := secretsStore.Load(server.CredentialReference)
 		if loadErr != nil {
@@ -112,7 +116,7 @@ func resolveCredentials(secretsStore SecretsStore, server *domain.Server) (priva
 }
 
 func (b *Backend) connectParams(server *domain.Server) (backup.ConnectParams, error) {
-	key, secret, err := resolveCredentials(b.Secrets, server)
+	key, secret, err := ResolveCredentials(b.Secrets, server)
 	if err != nil {
 		return backup.ConnectParams{}, err
 	}
@@ -123,7 +127,7 @@ func (b *Backend) connectParams(server *domain.Server) (backup.ConnectParams, er
 }
 
 func (b *Backend) connectionParams(server *domain.Server, trustedFingerprint string) (remote.ConnectionParams, error) {
-	key, secret, err := resolveCredentials(b.Secrets, server)
+	key, secret, err := ResolveCredentials(b.Secrets, server)
 	if err != nil {
 		return remote.ConnectionParams{}, err
 	}

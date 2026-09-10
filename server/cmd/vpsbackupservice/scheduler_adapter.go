@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"vpsbackupmanager/internal/backup"
 	"vpsbackupmanager/internal/domain"
+	"vpsbackupmanager/internal/ipc"
 	"vpsbackupmanager/internal/secrets"
 	"vpsbackupmanager/internal/store"
 )
@@ -22,19 +21,15 @@ type schedulerRunner struct {
 }
 
 func (r *schedulerRunner) Run(ctx context.Context, job *domain.Job, server *domain.Server, trigger domain.Trigger) (*domain.Run, error) {
-	keyPEM, err := os.ReadFile(server.PrivateKeyPath) //nolint:gosec // path is an admin-configured server setting, not external input
+	keyPEM, secret, err := ipc.ResolveCredentials(r.secretsStore, server)
 	if err != nil {
-		return nil, fmt.Errorf("read private key %q: %w", server.PrivateKeyPath, err)
+		return nil, err
 	}
-	var passphrase string
-	if server.CredentialReference != "" {
-		secretBytes, loadErr := r.secretsStore.Load(server.CredentialReference)
-		if loadErr != nil {
-			return nil, loadErr
-		}
-		passphrase = string(secretBytes)
+	connectParams := backup.ConnectParams{Server: server, PrivateKeyPEM: keyPEM, Passphrase: secret}
+	if server.AuthType == domain.AuthPassword {
+		connectParams = backup.ConnectParams{Server: server, Password: secret}
 	}
-	return r.engine.Run(ctx, job, server, backup.ConnectParams{Server: server, PrivateKeyPEM: keyPEM, Passphrase: passphrase}, job.LocalDestination, trigger)
+	return r.engine.Run(ctx, job, server, connectParams, job.LocalDestination, trigger)
 }
 
 // schedRunStore adapts store.RunRepository to scheduler.RunStore.
