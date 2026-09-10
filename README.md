@@ -8,6 +8,8 @@ remote service, archive its data, verify it, bring the service back up —
 even when the desktop UI is closed or the archive step fails. A Flutter
 desktop client provides configuration, live run progress, and history.
 
+![SSH Backup Manager dashboard showing upcoming and recent backup runs](overview.png)
+
 ## Why
 
 Ad-hoc scripts and Scheduled Tasks copy files but silently leave a
