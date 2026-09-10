@@ -15,9 +15,16 @@ import (
 // missed; SKIP records a SKIPPED run instead. A job with no prior run has
 // nothing to compare against and is left alone — it just hasn't run yet.
 //
-// Call this once at startup, before Start, and never while schedules are
-// paused (paused occurrences are never queued as catch-up, per the
-// scheduling specification).
+// Call this once at startup and never while schedules are paused (paused
+// occurrences are never queued as catch-up, per the scheduling
+// specification). It runs catch-up backups synchronously, one job at a
+// time, and can take arbitrarily long, so callers for whom startup
+// latency matters (the Windows service reporting itself started, IPC
+// becoming available) should run it concurrently with Start rather than
+// blocking on it first: a live-dispatch tick racing a still-running
+// catch-up for the same job is resolved harmlessly by the per-job run
+// lock (see Engine.beginRun), and considerJob's first-tick-per-job
+// baseline write never dispatches on that same tick.
 func (d *Dispatcher) DetectMissedRuns(ctx context.Context) error {
 	settings, err := d.Settings.Get(ctx)
 	if err != nil {

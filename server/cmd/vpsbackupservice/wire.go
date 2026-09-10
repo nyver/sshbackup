@@ -157,10 +157,25 @@ func buildApp(
 	schedRunner := &schedulerRunner{engine: engine, servers: servers, secretsStore: secretsStore}
 	dispatcher := scheduler.NewDispatcher(jobs, servers, settingsRepo, &schedRunStore{runs: runs}, schedRunner)
 	dispatcher.Logger = logger
-	if err := dispatcher.DetectMissedRuns(runCtx); err != nil { //nolint:contextcheck // runCtx is the service's own lifecycle context, deliberately independent of ctx; see where it is created above
-		logger.Error("detect missed runs", "error", err)
-	}
-	dispatcher.Start(runCtx) //nolint:contextcheck // see above
+	dispatcher.Start(runCtx) //nolint:contextcheck // runCtx is the service's own lifecycle context, deliberately independent of ctx; see where it is created above
+
+	// Missed-run catch-up runs backups synchronously, one job at a time,
+	// and can take arbitrarily long (a job's ArchiveTimeoutSeconds bounds
+	// a single run, not this loop across every job with a missed
+	// occurrence). It must not block the service from reporting itself
+	// started: on Windows that delays svc.Running past the SCM's start
+	// timeout, and everywhere it delays the IPC server, leaving the
+	// Flutter client unable to connect for as long as catch-up runs.
+	// considerJob's first-tick-per-job baseline write is a no-op for
+	// dispatch (see its doc comment), and beginRun's job lock makes a
+	// live-dispatch tick racing a still-running catch-up for the same job
+	// resolve as a harmless SKIPPED run, so running this concurrently
+	// with the live dispatcher is safe.
+	go func() {
+		if err := dispatcher.DetectMissedRuns(runCtx); err != nil { //nolint:contextcheck // see above
+			logger.Error("detect missed runs", "error", err)
+		}
+	}()
 
 	go func() {
 		if err := ipcServer.Serve(runCtx, pipeName); err != nil {
