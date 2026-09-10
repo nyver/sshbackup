@@ -10,6 +10,8 @@ desktop client provides configuration, live run progress, and history.
 
 ![SSH Backup Manager dashboard showing upcoming and recent backup runs](overview.png)
 
+![SSH Backup Manager jobs list showing scheduled backup jobs](overview_jobs.png)
+
 ## Why
 
 Ad-hoc scripts and Scheduled Tasks copy files but silently leave a
