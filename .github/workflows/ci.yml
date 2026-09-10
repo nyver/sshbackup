@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: gofumpt
+        run: |
+          go install mvdan.cc/gofumpt@latest
+          out=$(gofumpt -l .)
+          if [ -n "$out" ]; then
+            echo "$out"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: server
+          args: --timeout=5m
+
+      - name: go build
+        run: go build ./...
+
+      - name: go build (windows/amd64 cross-compile)
+        run: GOOS=windows GOARCH=amd64 go build -o bin/vpsbackupservice.exe ./cmd/vpsbackupservice
+
+      - name: go test
+        run: go test ./... -count=1
+
+      - name: go test -race
+        run: go test ./... -race -count=1
+
+  flutter:
+    name: Flutter
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: dart format
+        run: dart format --set-exit-if-changed .
+
+      - name: flutter analyze
+        run: flutter analyze
+
+      - name: flutter test
+        run: flutter test
+
+  windows-build:
+    name: Windows build
+    runs-on: windows-latest
+    needs: [go, flutter]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Build Go service (windows/amd64)
+        working-directory: server
+        run: go build -o bin/vpsbackupservice.exe ./cmd/vpsbackupservice
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+        working-directory: apps/client
+
+      - name: flutter build windows (debug)
+        working-directory: apps/client
+        run: flutter build windows --debug

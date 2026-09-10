@@ -1,5 +1,7 @@
 # SSH Backup Manager
 
+[![CI](https://github.com/nyver/sshbackup/actions/workflows/ci.yml/badge.svg)](https://github.com/nyver/sshbackup/actions/workflows/ci.yml)
+
 An agentless, SSH-based backup orchestrator for self-hosted VPS servers on
 Windows. A background Windows Service runs scheduled backups — stop a
 remote service, archive its data, verify it, bring the service back up —
