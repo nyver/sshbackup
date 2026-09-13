@@ -126,8 +126,16 @@ func (d *Dispatcher) tick(ctx context.Context) {
 
 // considerJob checks whether job has crossed a schedule occurrence since
 // the last time it was considered and, if so, tries to start it. The
-// per-job baseline advances only once the job actually starts: if a
-// concurrency limit blocks it, the same occurrence is retried on the next
+// per-job baseline advances only once the job actually starts, and it
+// advances all the way to now rather than to the occurrence that fired:
+// if the poll loop fell behind by more than one occurrence (e.g. the host
+// slept for a few days while this process stayed resident, so no tick ran
+// and DetectMissedRuns never got a chance to collapse the backlog at
+// startup), the whole backlog counts as caught up after one run, matching
+// "at most one catch-up run per job regardless of how many occurrences
+// were missed" instead of replaying one run per missed occurrence on
+// successive ticks. If a concurrency limit blocks the start, the baseline
+// does not advance and the same due occurrence is retried on the next
 // tick instead of being silently dropped, per "a job that cannot start
 // because of a limit SHALL wait in the dispatch queue rather than fail."
 // The first tick for a newly seen job only establishes the baseline:
@@ -150,7 +158,7 @@ func (d *Dispatcher) considerJob(ctx context.Context, job *domain.Job, now time.
 
 	if d.tryStart(ctx, job, domain.TriggerSchedule, globalLimit) {
 		d.mu.Lock()
-		d.scheduledUpTo[job.ID] = next
+		d.scheduledUpTo[job.ID] = now
 		d.mu.Unlock()
 	}
 }

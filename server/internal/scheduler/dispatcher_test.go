@@ -198,6 +198,52 @@ func TestDispatcher_StartStop_DispatchesDueJob(t *testing.T) {
 	}
 }
 
+// TestDispatcher_StartStop_ClockJumpAcrossMultipleOccurrencesRunsOnce
+// reproduces a production bug: the machine sleeps for a few days with the
+// service process still resident (no restart, so DetectMissedRuns never
+// runs), and the poll ticker's next real tick lands after several of the
+// job's daily occurrences have passed. The live dispatcher must collapse
+// that backlog into a single catch-up run, exactly like DetectMissedRuns
+// does at startup, not replay one run per missed occurrence.
+func TestDispatcher_StartStop_ClockJumpAcrossMultipleOccurrencesRunsOnce(t *testing.T) {
+	t.Parallel()
+	server := &domain.Server{ID: "srv-1"}
+	job := dailyJob(t, "job-1", server.ID, domain.MissedRunAsSoonAsPossible)
+
+	settings := newMemSettingsStore(domain.DefaultSettings())
+	runner := &fakeRunner{}
+	clock := newFakeClock(mustParse(t, time.RFC3339, "2026-09-10T02:00:00Z")) // before today's 03:00
+
+	d := scheduler.NewDispatcher(
+		&memJobStore{jobs: []*domain.Job{job}},
+		&memServerStore{servers: map[string]*domain.Server{server.ID: server}},
+		settings, newMemSchedRunStore(), runner,
+	)
+	d.Clock = clock
+	d.PollInterval = 5 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(context.Background())
+	d.Start(ctx)
+	time.Sleep(200 * time.Millisecond) // let the dispatcher establish its baseline tick
+
+	// Jump the clock forward three days, as if the machine had been
+	// asleep: three daily 03:00 occurrences (day+1, day+2, day+3) are now
+	// all in the past relative to the new "now".
+	clock.Set(mustParse(t, time.RFC3339, "2026-09-13T05:00:00Z"))
+
+	ok := waitFor(t, 2*time.Second, func() bool { return runner.CallCount() > 0 })
+	time.Sleep(200 * time.Millisecond) // give a wrongly-replayed second/third catch-up run a chance to appear
+	cancel()
+	d.Stop()
+
+	if !ok {
+		t.Fatal("expected the dispatcher to run the due job")
+	}
+	if got := runner.CallCount(); got != 1 {
+		t.Fatalf("runner called %d times after a multi-day clock jump, want exactly 1 catch-up run regardless of how many occurrences were missed", got)
+	}
+}
+
 func TestDispatcher_ConcurrencyLimits_PerServerLimitQueuesTheSecondJob(t *testing.T) {
 	t.Parallel()
 	server := &domain.Server{ID: "srv-1"}
