@@ -59,7 +59,17 @@ func (d *Dispatcher) detectMissedRunForJob(ctx context.Context, job *domain.Job,
 		return
 	}
 
-	missed, found, err := NextRun(job.Schedule, lastRun.StartedAt)
+	// lastRun.StartedAt comes back from the store in UTC (see
+	// store.parseTime), but NextRun's contract requires after to be in
+	// the same time zone as now (host local time in production): the
+	// schedule's Hour/Minute are local wall-clock values. Without this
+	// conversion, a job whose local zone has a non-zero UTC offset gets
+	// a phantom "next occurrence" computed against the UTC wall clock,
+	// which can already be in the past relative to now even though the
+	// job's real local occurrence already ran and correctly hasn't come
+	// due again — producing a spurious MISSED_SCHEDULE catch-up run
+	// every time the service restarts later the same day.
+	missed, found, err := NextRun(job.Schedule, lastRun.StartedAt.In(now.Location()))
 	if err != nil || !found || missed.After(now) {
 		return
 	}

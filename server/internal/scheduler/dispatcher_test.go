@@ -58,6 +58,50 @@ func TestDispatcher_DetectMissedRuns_CatchUpCollapsesMultipleOccurrences(t *test
 	}
 }
 
+// TestDispatcher_DetectMissedRuns_NonUTCHostDoesNotFireGhostCatchUp
+// reproduces a production bug: lastRun.StartedAt comes back from the
+// store in UTC, but the schedule's Hour/Minute are local wall-clock
+// values and NextRun must be called with after in the same zone as now.
+// On a host east of UTC, a job that already ran this morning local time
+// was wrongly flagged as having missed a further occurrence at
+// "Hour:Minute UTC" (translating to a later local time on the same day)
+// whenever the service restarted later that day, firing a spurious
+// MISSED_SCHEDULE catch-up run.
+func TestDispatcher_DetectMissedRuns_NonUTCHostDoesNotFireGhostCatchUp(t *testing.T) {
+	t.Parallel()
+	msk := time.FixedZone("MSK", 3*60*60)
+	server := &domain.Server{ID: "srv-1"}
+	job := dailyJob(t, "job-1", server.ID, domain.MissedRunAsSoonAsPossible)
+
+	// Schedule is daily at 09:00 local (MSK). The job ran this morning at
+	// 09:00 MSK, stored (like the real repository) as its UTC equivalent,
+	// 06:00 UTC.
+	job.Schedule.Hour, job.Schedule.Minute = 9, 0
+
+	runs := newMemSchedRunStore()
+	runs.SeedLastRun(job.ID, time.Date(2026, 9, 18, 6, 0, 0, 0, time.UTC))
+
+	settings := newMemSettingsStore(domain.DefaultSettings())
+	runner := &fakeRunner{}
+	d := scheduler.NewDispatcher(
+		&memJobStore{jobs: []*domain.Job{job}},
+		&memServerStore{servers: map[string]*domain.Server{server.ID: server}},
+		settings, runs, runner,
+	)
+	// The service restarts the same afternoon, well after the morning
+	// run but also after "09:00 UTC" (= 12:00 MSK), the ghost occurrence
+	// the pre-fix code computed.
+	d.Clock = newFakeClock(time.Date(2026, 9, 18, 13, 37, 0, 0, msk))
+
+	if err := d.DetectMissedRuns(context.Background()); err != nil {
+		t.Fatalf("DetectMissedRuns() error = %v", err)
+	}
+
+	if got := runner.CallCount(); got != 0 {
+		t.Fatalf("runner called %d times, want 0: this morning's local run must not be treated as missed", got)
+	}
+}
+
 func TestDispatcher_DetectMissedRuns_SkipPolicyRecordsSkippedRun(t *testing.T) {
 	t.Parallel()
 	server := &domain.Server{ID: "srv-1"}
