@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -45,6 +46,21 @@ func (s *memRunStore) Get(id string) *domain.Run {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.runs[id]
+}
+
+// ListArchived satisfies retention.RunStore so engine tests can exercise a
+// real retention.Applier end to end, most recently started first.
+func (s *memRunStore) ListArchived(_ context.Context, jobID string) ([]*domain.Run, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []*domain.Run
+	for _, r := range s.runs {
+		if r.JobID == jobID && r.ArchiveName != "" {
+			out = append(out, r)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].StartedAt.After(out[j].StartedAt) })
+	return out, nil
 }
 
 type memStepStore struct {
