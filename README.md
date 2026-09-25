@@ -29,7 +29,10 @@ outcome, reported separately from whether the archive itself succeeded.
   development with C++" workload, per the Flutter Windows setup docs).
 - **Remote targets:** any host reachable over SSH with a POSIX shell
   providing `tar`, `gzip`, `sha256sum`, `du`, and `df`. Tested against
-  Ubuntu/Debian.
+  Ubuntu/Debian. Sources with include patterns additionally need GNU
+  `tar` (`--null`) and `find` (`-print0`). An include pattern is a glob
+  matched against entry base names below the source path; a matching
+  directory is archived whole, and exclude patterns still apply on top.
 
 ## Install
 
